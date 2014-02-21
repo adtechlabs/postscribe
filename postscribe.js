@@ -7,7 +7,7 @@
 
 (function() {
 
-  var global = this;
+  var global = this.ADTECH;
 
   if(global.postscribe) {
     return;

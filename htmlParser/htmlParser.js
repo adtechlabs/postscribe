@@ -353,5 +353,5 @@
     htmlParser.browserHasFlaw = htmlParser.browserHasFlaw || (!supports[key]) && key;
   }
 
-  this.htmlParser = htmlParser;
+  this.ADTECH.htmlParser = this.ADTECH.htmlParser || htmlParser;
 })();

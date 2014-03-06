@@ -13,6 +13,8 @@
     return;
   }
 
+  global.document = this.document;
+
   // Turn on to debug how each chunk affected the DOM.
   var DEBUG_CHUNK = false;
 
@@ -83,6 +85,28 @@
   function isScript(tok) {
     return (/^script$/i).test(tok.tagName);
   }
+
+  var decodeHTMLEntities = (function() {
+    // Wrapping in anon. function prevents any overhead from creating the object each time
+    // Let's do this to the browser
+    var element = global.document.createElement('div');
+    function decode(str) {
+      if(str && typeof str === 'string') {
+        var orig = str;
+        element.innerHTML = str;
+        str = element.textContent;
+        if(!str) {
+          str = element.innerText; // IE 8
+        }
+        if(!str) {
+          str = orig; // Just to be on the safe side
+        }
+        element.innerHTML = '';
+      }
+      return str;
+    }
+    return decode;
+  })();
 
   // # Class WriteStream
 
@@ -380,7 +404,7 @@
 
       if(tok.src) {
         // Fix for attribute "SRC" (capitalized). IE does not recognize it.
-        el.src = tok.src;
+        el.src = decodeHTMLEntities(tok.src);
         this.scriptLoadHandler(el, !asyncRelease ? function() {
           done();
           afterAsync();

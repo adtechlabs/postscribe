@@ -363,6 +363,9 @@
       var _this = this;
       this.writeScriptToken(tok, function() {
         _this.onScriptDone(tok);
+	if(tok.attrs.adtechQueueId && global.queueCallback) {
+	  global.queueCallback(tok.attrs.adtechQueueId);
+	}
       });
 
     };

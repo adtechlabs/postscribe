@@ -46,13 +46,6 @@
 
     var stack = [];
 
-    var unescapeHTMLEntities = function(html) {
-      return typeof html === 'string' ? html.replace(/(&#\d{1,4};)/gm, function(match){
-        var code = match.substring(2,match.length-1);
-        return String.fromCharCode(code);
-      }) : html;
-    };
-
     var append = function(str) {
       stream += str;
     };
@@ -130,7 +123,7 @@
             var value = arguments[2] || arguments[3] || arguments[4] ||
               fillAttr.test(name) && name || null;
 
-            attrs[name] = unescapeHTMLEntities(value);
+            attrs[name] = this.ADTECH.decodeHTMLEntities(value);
           });
 
           return {

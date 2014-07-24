@@ -141,6 +141,8 @@
     return decode;
   })();
 
+  global.decodeHTMLEntities = decodeHTMLEntities;
+
   // # Class WriteStream
 
   // Stream static html to an element, where "static html" denotes "html without scripts".

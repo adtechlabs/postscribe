@@ -119,7 +119,7 @@
       startTag: function() {
         var endTagIndex = stream.indexOf('>');
         if(endTagIndex === -1) {
-          return null; //avoid the match statement if there will be no match
+          return null; //avoid the match statement if there will be no match, that triggers intensive computation if the open tag is big
         }
         var match = stream.match( startTag );
 

@@ -58,7 +58,7 @@
     var detect = {
       comment: /^<!--/,
       endTag: /^<\//,
-      atomicTag: /^<\s*(script|style|noscript|iframe|textarea)[\s>]/i,
+      atomicTag: /^<\s*(script|style|noscript|iframe|textarea)[\s\/>]/i,
       startTag: /^</,
       chars: /^[^<]/
     };
@@ -109,6 +109,10 @@
       },
 
       startTag: function() {
+        var endTagIndex = stream.indexOf('>');
+        if(endTagIndex === -1) {
+          return null; //avoid the match statement if there will be no match
+        }
         var match = stream.match( startTag );
 
         if ( match ) {
@@ -285,11 +289,15 @@
           if(tok && handlers[tok.type]) {
             handlers[tok.type](tok);
           }
+          return tok;
         };
 
         // redefine readToken
         readToken = function() {
-          prepareNextToken();
+          var token = prepareNextToken();
+          if(!token) {
+            return null;
+          }
           return correct(readTokenImpl());
         };
       })();

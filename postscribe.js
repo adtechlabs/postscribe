@@ -194,7 +194,7 @@
 
         doc: doc,
 
-        parser: htmlParser('', { autoFix: true }),
+        parser: global.htmlParser('', { autoFix: true }),
 
         // Actual elements by id.
         actuals: [root],

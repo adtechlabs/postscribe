@@ -28,6 +28,7 @@
   var fillAttr = /^(checked|compact|declare|defer|disabled|ismap|multiple|nohref|noresize|noshade|nowrap|readonly|selected)$/i;
 
   var DEBUG = false;
+  var global = this.ADTECH;
 
   function htmlParser(stream, options) {
     stream = stream || '';
@@ -123,7 +124,7 @@
             var value = arguments[2] || arguments[3] || arguments[4] ||
               fillAttr.test(name) && name || null;
 
-            attrs[name] = this.ADTECH.decodeHTMLEntities(value);
+            attrs[name] = global.decodeHTMLEntities(value);
           });
 
           return {
@@ -360,5 +361,5 @@
     htmlParser.browserHasFlaw = htmlParser.browserHasFlaw || (!supports[key]) && key;
   }
 
-  this.ADTECH.htmlParser = this.ADTECH.htmlParser || htmlParser;
+  global.htmlParser = global.htmlParser || htmlParser;
 })();

@@ -47,6 +47,89 @@
 
     var stack = [];
 
+    var htmlEntityMap = {
+      '&copy;': '169',
+      '&middot;': '183',
+      '&euro;': '8364',
+      '&nbsp;': '160',
+      '&amp;': '38',
+      '&quot;': '34',
+      '&reg;': '174',
+      '&trade;': '8482',
+      '&ldquo;': '8220',
+      '&rdquo;': '8221',
+      '&lsquo;': '8216',
+      '&rsquo;': '8217',
+      '&laquo;': '171',
+      '&raquo;': '187',
+      '&lsaquo;': '8249',
+      '&rsaquo;': '8250',
+      '&sect;': '167',
+      '&para;': '182',
+      '&bull;': '8226',
+      '&hellip;': '8230',
+      '&brvbar;': '166',
+      '&ndash;': '8211',
+      '&mdash;': '8212',
+      '&curren;': '164',
+      '&cent;': '162',
+      '&pound;': '163',
+      '&yen;': '165',
+      '&lt;': '60',
+      '&gt;': '62',
+      '&le;': '8804',
+      '&ge;': '8805',
+      '&times;': '215',
+      '&divide;': '247',
+      '&minus;': '8722',
+      '&plusmn;': '177',
+      '&ne;': '8800',
+      '&sup1;': '185',
+      '&sup2;': '178',
+      '&sup3;': '179',
+      '&frac12;': '189',
+      '&frac14;': '188',
+      '&frac34;': '190',
+      '&permil;': '8240',
+      '&deg;': '176',
+      '&radic;': '8730',
+      '&infin;': '8734',
+      '&larr;': '8592',
+      '&uarr;': '8593',
+      '&rarr;': '8594',
+      '&darr;': '8595',
+      '&harr;': '8596',
+      '&crarr;': '8629',
+      '&lceil;': '8968',
+      '&rceil;': '8969',
+      '&lfloor;': '8970',
+      '&rfloor;': '8971',
+      '&spades;': '9824',
+      '&clubs;': '9827',
+      '&hearts;': '9829',
+      '&diams;': '9830',
+      '&loz;': '9674',
+      '&dagger;': '8224',
+      '&Dagger;': '8225',
+      '&iexcl;': '161',
+      '&iquest;': '191'
+    };
+
+    var unescapeHTMLEntities = function(str) {
+      if(str && typeof str === 'string') {
+        var orig = str;
+        str = str.replace(/(&#\d{1,4};)/gm, function(match){
+          var code = match.substring(2,match.length-1);
+          return String.fromCharCode(code);
+        });
+        str = str.replace(/(&.{2,6};)/gm, function(match) {
+          var entityCode = htmlEntityMap[match];
+          return entityCode ? String.fromCharCode(entityCode): match;
+        });
+      }
+      return str;
+    };
+
     var append = function(str) {
       stream += str;
     };
@@ -124,7 +207,7 @@
             var value = arguments[2] || arguments[3] || arguments[4] ||
               fillAttr.test(name) && name || null;
 
-            attrs[name] = global.decodeHTMLEntities(value);
+            attrs[name] = unescapeHTMLEntities(value);
           });
 
           return {

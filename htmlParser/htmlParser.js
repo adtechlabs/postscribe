@@ -24,7 +24,7 @@
   // Regular Expressions for parsing tags and attributes
   var startTag = /^<([\-A-Za-z0-9_]+)((?:\s+[\w\-]+(?:\s*=?\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)>/;
   var endTag = /^<\/([\-A-Za-z0-9_]+)[^>]*>/;
-  var attr = /([\-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g;
+  var attr = /(?:([\-A-Za-z0-9_]+)\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))|(?:([\-A-Za-z0-9_]+)(\s|$)+)/g;
   var fillAttr = /^(checked|compact|declare|defer|disabled|ismap|multiple|nohref|noresize|noshade|nowrap|readonly|selected)$/i;
 
   var DEBUG = false;
@@ -131,6 +131,12 @@
     };
 
     var append = function(str) {
+      if(str) {
+        var docTypeIndex = str.indexOf('<!DOCTYPE html>');
+        if(docTypeIndex !== -1) {
+          str = str.substring(0, docTypeIndex) + str.substring(docTypeIndex + 15);
+        }
+      }
       stream += str;
     };
 
@@ -155,7 +161,7 @@
         var index = stream.indexOf('-->');
         if ( index >= 0 ) {
           return {
-            content: stream.substr(4, index),
+            content: stream.substr(4, index - 1),
             length: index + 3
           };
         }
@@ -196,23 +202,34 @@
       startTag: function() {
         var endTagIndex = stream.indexOf('>');
         if(endTagIndex === -1) {
-          return null; //avoid the match statement if there will be no match, that triggers intensive computation if the open tag is big
+          return null; //avoid the match statement if there will be no match
         }
         var match = stream.match( startTag );
 
         if ( match ) {
           var attrs = {};
+          var booleanAttrs = {};
+          var rest = match[2];
 
           match[2].replace(attr, function(match, name) {
-            var value = arguments[2] || arguments[3] || arguments[4] ||
-              fillAttr.test(name) && name || null;
-
-            attrs[name] = unescapeHTMLEntities(value);
+            if (!(arguments[2] || arguments[3] || arguments[4] || arguments[5])) {
+              attrs[name] = null;
+            } else if (arguments[5]) {
+              attrs[arguments[5]] = '';
+              booleanAttrs[name] = true;
+            } else {
+              var value = arguments[2] || arguments[3] || arguments[4] ||
+                  fillAttr.test(name) && name || '';
+              attrs[name] = unescapeHTMLEntities(value);
+            }
+            rest = rest.replace(match, '');
           });
 
           return {
             tagName: match[1],
             attrs: attrs,
+            booleanAttrs: booleanAttrs,
+            rest: rest,
             unary: !!match[3],
             length: match[0].length
           };
@@ -305,6 +322,7 @@
           if(tok && tok.type === 'startTag') {
             // unary
             tok.unary = EMPTY.test(tok.tagName) || tok.unary;
+            tok.html5Unary = !/\/>$/.test(tok.text);
           }
           return tok;
         };
@@ -372,15 +390,11 @@
           if(tok && handlers[tok.type]) {
             handlers[tok.type](tok);
           }
-          return tok;
         };
 
         // redefine readToken
         readToken = function() {
-          var token = prepareNextToken();
-          if(!token) {
-            return null;
-          }
+          prepareNextToken();
           return correct(readTokenImpl());
         };
       })();
@@ -402,13 +416,13 @@
   htmlParser.tokenToString = function(tok) {
     var handler = {
       comment: function(tok) {
-        return '<--' + tok.content + '-->';
+        return '<!--' + tok.content;
       },
       endTag: function(tok) {
         return '</'+tok.tagName+'>';
       },
       atomicTag: function(tok) {
-        console.log(tok);
+        if(DEBUG) { console.log(tok); }
         return handler.startTag(tok) +
               tok.content +
               handler.endTag(tok);
@@ -416,11 +430,17 @@
       startTag: function(tok) {
         var str = '<'+tok.tagName;
         for (var key in tok.attrs) {
+          str += ' '+key;
           var val = tok.attrs[key];
-          // escape quotes
-          str += ' '+key+'="'+(val ? val.replace(/(^|[^\\])"/g, '$1\\\"') : '')+'"';
+          if (typeof tok.booleanAttrs == 'undefined' || typeof tok.booleanAttrs[key] == 'undefined') {
+            // escape quotes
+            str += '="'+(val ? val.replace(/(^|[^\\])"/g, '$1\\\"') : '')+'"';
+           }
         }
-        return str + (tok.unary ? '/>' : '>');
+        if (tok.rest) {
+          str += tok.rest;
+        }
+        return str + (tok.unary && !tok.html5Unary ? '/>' : '>');
       },
       chars: function(tok) {
         return tok.text;

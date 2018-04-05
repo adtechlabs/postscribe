@@ -94,6 +94,7 @@ export default class WriteStream {
     this.doc = root.ownerDocument;
     this.win = this.doc.defaultView || this.doc.parentWindow;
     this.parser = new HtmlParser('', {autoFix: options.autoFix});
+    this.global = options.global;
 
     // Actual elements by id.
     this.actuals = [root];
@@ -107,6 +108,8 @@ export default class WriteStream {
 
     this.scriptStack = [];
     this.writeQueue = [];
+
+    this.cleared = false;
 
     setData(this.proxyRoot, 'proxyof', 0);
   }
@@ -347,6 +350,9 @@ export default class WriteStream {
     // Put the script node in the DOM.
     this._writeScriptToken(tok, () => {
       this._onScriptDone(tok);
+      if(tok.attrs.adtechQueueId && this.global.queueCallback) {
+        this.global.queueCallback(tok.attrs.adtechQueueId);
+      }
     });
   }
 
@@ -453,6 +459,9 @@ export default class WriteStream {
    */
   _onScriptDone(tok) {
     // Pop script and check nesting.
+    if(this.cleared === true) {
+      return; //stop as it was blown away on clean request
+    }
     if (tok !== this.scriptStack[0]) {
       this.options.error({msg: 'Bad script nesting or script finished twice'});
       return;

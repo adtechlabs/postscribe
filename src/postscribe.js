@@ -1,6 +1,7 @@
 import WriteStream from './write-stream';
 import * as utils from './utils';
 
+
 /**
  * A function that intentionally does nothing.
  */
@@ -109,6 +110,9 @@ function runStream(el, html, options) {
   };
 
   function write(str) {
+    if(!active) {
+      return;
+    }
     str = options.beforeWrite(str);
     active.write(str);
     options.afterWrite(str);
@@ -122,13 +126,14 @@ function runStream(el, html, options) {
   });
 
   // Override window.onerror
+  const activeWin = active.win;
   const oldOnError = active.win.onerror || doNothing;
 
   // This works together with the try/catch around WriteStream::insertScript
   // In modern browsers, exceptions in tag scripts go directly to top level
   active.win.onerror = (msg, url, line) => {
     options.error({msg: `${msg} - ${url}: ${line}`});
-    oldOnError.apply(active.win, [msg, url, line]);
+    oldOnError.apply(activeWin, [msg, url, line]);
   };
 
   // Write to the stream
@@ -137,7 +142,7 @@ function runStream(el, html, options) {
     Object.assign(doc, stash);
 
     // restore window.onerror
-    active.win.onerror = oldOnError;
+    activeWin.onerror = oldOnError;
 
     options.done();
     active = null;
@@ -147,17 +152,23 @@ function runStream(el, html, options) {
   return active;
 }
 
+export var ADTECH_GLOBAL = window.ADTECH;
+
 export default function postscribe(el, html, options) {
   if (utils.isFunction(options)) {
     options = {done: options};
   } else if (options === 'clear') {
     queue = [];
+    if(active) {
+      active.cleared = true;
+    }
     active = null;
     nextId = 0;
     return;
   }
 
   options = utils.defaults(options, OPTIONS);
+  options.global = ADTECH_GLOBAL;
 
   // id selector
   if ((/^#/).test(el)) {
@@ -187,6 +198,16 @@ export default function postscribe(el, html, options) {
 
   return el.postscribe;
 }
+
+Object.assign = Object.assign || function(target, source) {
+  if(source && target) {
+    for(var key in source) {
+      if(source.hasOwnProperty(key)) {
+        target[key] = source[key];
+      }
+    }
+  }
+};
 
 Object.assign(postscribe, {
   // Streams by name.

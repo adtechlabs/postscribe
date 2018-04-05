@@ -24,7 +24,7 @@ export default {
   },
   output: {
     filename: `${pkg.name}.js`,
-    library: 'postscribe',
+    library: 'adtech_postscribe',
     libraryTarget: 'umd'
   },
   devtool: 'source-map'

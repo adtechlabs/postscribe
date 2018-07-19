@@ -199,14 +199,17 @@ export default function postscribe(el, html, options) {
   return el.postscribe;
 }
 
-Object.assign = Object.assign || function(target, source) {
-  if(source && target) {
+Object.assign = Object.assign || function(target) {
+  for (var sourceIndex = 1; sourceIndex < arguments.length; sourceIndex++) {
+    var source = arguments[sourceIndex];
     for(var key in source) {
       if(source.hasOwnProperty(key)) {
         target[key] = source[key];
       }
     }
   }
+
+  return target;
 };
 
 Object.assign(postscribe, {
